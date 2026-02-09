@@ -21,8 +21,12 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 // 3. Disable or restrict movement if stamina is fully drained
 // 4. Recover stamina when the character is not sprinting
 
+
+
 AFT_SprintCharacter::AFT_SprintCharacter()
 {
+	PrimaryActorTick.bCanEverTick=true;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 		
@@ -63,6 +67,9 @@ void AFT_SprintCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	playerStamina = 100;
+	isSprinting = false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -70,6 +77,7 @@ void AFT_SprintCharacter::BeginPlay()
 
 void AFT_SprintCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
+	
 	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
@@ -141,15 +149,50 @@ void AFT_SprintCharacter::Look(const FInputActionValue& Value)
 /** Connah methods implementation */
 void AFT_SprintCharacter::SprintStart(const FInputActionValue& Value)
 {
-	// we could set speeds, but i like scalers 
-	GetCharacterMovement()->MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed * 2;
-	// make it so they have a speed up route
-	GetCharacterMovement()->MinAnalogWalkSpeed = GetCharacterMovement()->MinAnalogWalkSpeed * 3;
+	// Check if the stamina is above 0
+	if (playerStamina > 0)
+	{
+		isSprinting = true;
+		// we could set speeds, but i like scalers 
+		GetCharacterMovement()->MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed * 2;
+		// make it so they have a speed up route
+		GetCharacterMovement()->MinAnalogWalkSpeed = GetCharacterMovement()->MinAnalogWalkSpeed * 3;
+	}
 }
 
 void AFT_SprintCharacter::SprintStop(const FInputActionValue& Value)
 {
-	// Reset the speeds
-	GetCharacterMovement()->MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed / 2;
-	GetCharacterMovement()->MinAnalogWalkSpeed = GetCharacterMovement()->MinAnalogWalkSpeed / 3;
+
+	// Only call it when the player was sprinting, otherwise it can be spammed and cause MANY MANY issues
+	if(isSprinting)
+		{
+			// Reset the speeds
+			GetCharacterMovement()->MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed / 2;
+			GetCharacterMovement()->MinAnalogWalkSpeed = GetCharacterMovement()->MinAnalogWalkSpeed / 3;
+			isSprinting = false;
+		}
+
+}
+
+void AFT_SprintCharacter::Tick(float deltaTime)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Stamina: %d"), playerStamina);
+	Super::Tick(deltaTime);
+
+	// If the stamina is not 100, and the player isnt sprinting, regen stamina
+	if (playerStamina == 0)
+	{
+		isSprinting = false;
+		GetCharacterMovement()->MaxWalkSpeed = GetCharacterMovement()->MaxWalkSpeed / 2;
+		GetCharacterMovement()->MinAnalogWalkSpeed = GetCharacterMovement()->MinAnalogWalkSpeed / 3;
+	}
+
+	if (playerStamina < 100&&!isSprinting)
+	{
+		playerStamina++;
+	}
+	if (isSprinting)
+	{
+		playerStamina--;
+	}
 }

@@ -18,7 +18,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 UCLASS(config=Game)
 class AFT_SprintCharacter : public ACharacter
 {
-	GENERATED_BODY()
+	GENERATED_BODY()	
 
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -50,7 +50,11 @@ class AFT_SprintCharacter : public ACharacter
 
 public:
 	AFT_SprintCharacter();
-	
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = Stamina)
+	int playerStamina;
+	bool isSprinting;
+
+
 
 protected:
 
@@ -63,6 +67,8 @@ protected:
 	/** Connah Addition 2 methods to ensure we handle sprint enable and disable */
 	void SprintStart(const FInputActionValue& Value); 
 	void SprintStop(const FInputActionValue& Value);
+
+	void Tick(float deltaTime);
 
 protected:
 	// APawn interface
